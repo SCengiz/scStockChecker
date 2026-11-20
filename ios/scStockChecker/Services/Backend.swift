@@ -34,6 +34,8 @@ final class Store {
     var profile: Profile?
     var events: [StockEvent] = []
     var runs: [CheckRun] = []
+    /// Seconds between server-side checks (app_settings, shared by all users).
+    var checkInterval = 30
     var errorMessage: String?
 
     /// Events newer than this were not seen in the history screen yet (bell badge).
@@ -87,7 +89,9 @@ final class Store {
                 .select().order("started_at", ascending: false).limit(200).execute().value
             async let runs: [CheckRun] = supabase.from("check_runs")
                 .select().order("started_at", ascending: false).limit(100).execute().value
+            async let settings: [AppSettings] = supabase.from("app_settings").select().execute().value
             (self.items, self.watchlists, self.events, self.runs) = try await (items, lists, events, runs)
+            if let interval = try await settings.first?.checkIntervalSeconds { checkInterval = interval }
             self.profile = try await profiles.first
             errorMessage = nil
         } catch {
@@ -152,6 +156,11 @@ final class Store {
     func delete(watchlist: Watchlist) async throws {
         try await supabase.from("watchlists").delete().eq("id", value: watchlist.id).execute()
         await reload()
+    }
+
+    func setCheckInterval(_ seconds: Int) async throws {
+        checkInterval = seconds
+        try await supabase.from("app_settings").update(["check_interval_seconds": seconds]).eq("id", value: 1).execute()
     }
 
     func saveNtfyTopic(_ topic: String) async throws {

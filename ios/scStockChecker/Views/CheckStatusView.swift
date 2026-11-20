@@ -7,7 +7,7 @@ struct CheckStatusBar: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let last = store.runs.first
-            let late = last.map { context.date.timeIntervalSince($0.startedAt) > 75 } ?? true
+            let late = last.map { context.date.timeIntervalSince($0.startedAt) > Double(store.checkInterval) + 45 } ?? true
             let color: Color = late ? .orange : (last?.isHealthy == false ? .red : .green)
             HStack(spacing: 8) {
                 Circle().fill(color).frame(width: 8, height: 8)
@@ -68,7 +68,7 @@ struct CheckLogView: View {
                 } header: {
                     Text("Ürünler")
                 } footer: {
-                    Text("Ürünler 30 saniyede bir, favori listelerinin içeriği 5 dakikada bir yeniden okunur.")
+                    Text("Ürün kontrol sıklığı: \(intervalText(store.checkInterval)) (Ayarlar'dan değiştirilebilir). Favori listelerinin içeriği 5 dakikada bir yeniden okunur.")
                 }
 
                 Section("Son 24 saat") {

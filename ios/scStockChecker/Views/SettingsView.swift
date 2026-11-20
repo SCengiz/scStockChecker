@@ -40,9 +40,14 @@ struct SettingsView: View {
 
                 Section {
                     LabeledContent("Takip edilen", value: "\(store.items.count) ürün")
-                    LabeledContent("Kontrol sıklığı", value: "30 saniye")
+                    Picker("Kontrol sıklığı", selection: Binding(
+                        get: { store.checkInterval },
+                        set: { value in Task { try? await store.setCheckInterval(value) } }
+                    )) {
+                        ForEach(Self.intervals, id: \.self) { Text(intervalText($0)).tag($0) }
+                    }
                 } footer: {
-                    Text("Kontrol sunucuda yapılır; telefon kapalıyken de devam eder.")
+                    Text("Kontrol sunucuda yapılır; telefon kapalıyken de devam eder. Çok sık kontrol, markanın bot korumasına takılma riskini artırır.")
                 }
 
                 Section {
@@ -55,6 +60,8 @@ struct SettingsView: View {
             .alert("Kaydedildi", isPresented: $saved) {}
         }
     }
+
+    static let intervals = [10, 15, 20, 30, 45, 60, 120, 300, 600]
 
     static func randomTopic() -> String {
         let chars = Array("abcdefghijkmnopqrstuvwxyz23456789")

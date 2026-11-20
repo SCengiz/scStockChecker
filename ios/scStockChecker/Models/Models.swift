@@ -112,6 +112,19 @@ struct Profile: Codable {
     }
 }
 
+struct AppSettings: Codable {
+    let checkIntervalSeconds: Int
+
+    enum CodingKeys: String, CodingKey {
+        case checkIntervalSeconds = "check_interval_seconds"
+    }
+}
+
+/// "30 sn", "2 dk"
+func intervalText(_ seconds: Int) -> String {
+    seconds < 60 ? "\(seconds) sn" : seconds % 60 == 0 ? "\(seconds / 60) dk" : "\(seconds / 60) dk \(seconds % 60) sn"
+}
+
 /// One server-side check of all tracked items.
 struct CheckRun: Codable, Identifiable, Hashable {
     let id: Int
