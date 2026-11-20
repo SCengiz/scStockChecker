@@ -8,3 +8,7 @@ DEVELOPMENT_TEAM = ABCDE12345
 // Something unique to you, e.g. com.yourname. The app id becomes
 // <prefix>.scStockChecker.
 BUNDLE_ID_PREFIX = com.yourname
+
+// Optional: sign in automatically with this account (handy while testing).
+// AUTO_LOGIN_USER = admin
+// AUTO_LOGIN_PASSWORD = your-password

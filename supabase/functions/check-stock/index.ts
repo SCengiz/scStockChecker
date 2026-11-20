@@ -83,9 +83,15 @@ async function checkItems(db: SupabaseClient) {
   const { data: profiles } = await db.from("profiles").select("user_id, ntfy_topic");
   const topics = new Map((profiles ?? []).map((p) => [p.user_id, p.ntfy_topic as string | null]));
 
-  // Fetch each product page once, even if several items/users track it.
+  // Fetch each product colour once, even if several items/users track it. The
+  // colour goes in ?v1= because Zara names the product after the requested colour.
   const byUrl = new Map<string, ItemRow[]>();
-  for (const it of (items ?? []) as ItemRow[]) byUrl.set(it.url, [...(byUrl.get(it.url) ?? []), it]);
+  for (const it of (items ?? []) as ItemRow[]) {
+    const u = new URL(it.url);
+    if (it.color_id) u.searchParams.set("v1", it.color_id);
+    const key = u.toString();
+    byUrl.set(key, [...(byUrl.get(key) ?? []), it]);
+  }
 
   let checked = 0, notified = 0, failed = 0;
   await mapLimit([...byUrl.entries()], CONCURRENCY, async ([url, rows]) => {

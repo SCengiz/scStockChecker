@@ -11,9 +11,8 @@ struct LoginView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("E-posta", text: $email)
+                    TextField("Kullanıcı adı", text: $email)
                         .textContentType(.username)
-                        .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     SecureField("Şifre", text: $password)
@@ -41,7 +40,7 @@ struct LoginView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            try await store.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password)
+            try await store.signIn(username: email, password: password)
             error = nil
         } catch {
             self.error = "Giriş yapılamadı: \(error.localizedDescription)"

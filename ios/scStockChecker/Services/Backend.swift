@@ -11,6 +11,14 @@ enum AppConfig {
     static let supabaseKey = Bundle.main.object(forInfoDictionaryKey: "SupabaseAnonKey") as? String ?? ""
 
     static var isConfigured: Bool { !supabaseURL.absoluteString.contains("YOUR-PROJECT") && !supabaseKey.contains("YOUR-") }
+
+    /// Optional test account from Local.xcconfig (AUTO_LOGIN_USER / AUTO_LOGIN_PASSWORD):
+    /// when set, the app signs in by itself instead of showing the login screen.
+    static var autoLogin: (user: String, password: String)? {
+        let user = (Bundle.main.object(forInfoDictionaryKey: "AutoLoginUser") as? String ?? "").trimmingCharacters(in: .whitespaces)
+        let password = Bundle.main.object(forInfoDictionaryKey: "AutoLoginPassword") as? String ?? ""
+        return user.isEmpty || password.isEmpty ? nil : (user, password)
+    }
 }
 
 let supabase = SupabaseClient(supabaseURL: AppConfig.supabaseURL, supabaseKey: AppConfig.supabaseKey)
@@ -27,16 +35,28 @@ final class Store {
     var notifications: [SentNotification] = []
     var errorMessage: String?
 
+    /// The session is stored in the keychain by the Supabase SDK, so the user stays
+    /// signed in across launches until they sign out.
     func start() async {
-        for await (_, session) in supabase.auth.authStateChanges {
+        for await (event, session) in supabase.auth.authStateChanges {
+            if event == .initialSession, session == nil, let login = AppConfig.autoLogin,
+               (try? await signIn(username: login.user, password: login.password)) != nil {
+                continue // the .signedIn event that follows carries the session
+            }
             userId = session?.user.id
             isRestoring = false
             if userId != nil { await reload() } else { clear() }
         }
     }
 
-    func signIn(email: String, password: String) async throws {
-        try await supabase.auth.signIn(email: email, password: password)
+    /// Users sign in with a short user name (e.g. "admin"); Supabase needs an email,
+    /// so a bare name is mapped to <name>@stoktakip.app. Supabase also requires
+    /// passwords of 6+ characters, so the typed password is wrapped the same way
+    /// every time and accounts are created with the wrapped form.
+    func signIn(username: String, password: String) async throws {
+        let name = username.trimmingCharacters(in: .whitespaces).lowercased()
+        let email = name.contains("@") ? name : "\(name)@stoktakip.app"
+        try await supabase.auth.signIn(email: email, password: "sc-\(password)-stoktakip")
     }
 
     func signOut() async {

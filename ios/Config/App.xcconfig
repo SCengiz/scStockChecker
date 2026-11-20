@@ -10,4 +10,9 @@ SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSI
 BUNDLE_ID_PREFIX = com.example
 DEVELOPMENT_TEAM =
 
+// Optional test account: the app signs in with it automatically. Leave empty
+// here; set it only in Local.xcconfig.
+AUTO_LOGIN_USER =
+AUTO_LOGIN_PASSWORD =
+
 #include? "Local.xcconfig"

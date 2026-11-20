@@ -43,3 +43,5 @@ targets:
         LSApplicationQueriesSchemes: [ntfy]
         SupabaseURL: $(SUPABASE_URL)
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
+        AutoLoginUser: $(AUTO_LOGIN_USER)
+        AutoLoginPassword: $(AUTO_LOGIN_PASSWORD)
