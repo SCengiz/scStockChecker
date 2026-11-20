@@ -1,0 +1,3 @@
+# scStockChecker
+
+Work in progress.

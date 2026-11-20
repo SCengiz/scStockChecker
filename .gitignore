@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Local signing settings (each builder sets their own team)
+Local.xcconfig
+
+# Secrets
+.env
+*.p12
+*.mobileprovision
