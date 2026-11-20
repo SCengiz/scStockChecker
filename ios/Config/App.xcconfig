@@ -3,8 +3,8 @@
 
 // Backend (Supabase). The anon key is public by design: data is protected by
 // row level security and sign-ups are disabled.
-SUPABASE_URL = https:/$()/YOUR-PROJECT.supabase.co
-SUPABASE_ANON_KEY = YOUR-ANON-KEY
+SUPABASE_URL = https:/$()/fdmvftjdsjyrowpklxpl.supabase.co
+SUPABASE_ANON_KEY = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkbXZmdGpkc2p5cm93cGtseHBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTUyMDA1NzMsImV4cCI6MjExMDc3NjU3M30.479ExikjFQcG2giShXLbCgK0cVhVUD4AYN8C-Icwi1I
 
 // Defaults, overridden by Local.xcconfig.
 BUNDLE_ID_PREFIX = com.example

@@ -23,3 +23,8 @@ Local.xcconfig
 
 # Deno
 .deno/
+
+# Supabase local secrets and CLI state
+supabase/.secrets/
+supabase/.temp/
+supabase/.branches/
