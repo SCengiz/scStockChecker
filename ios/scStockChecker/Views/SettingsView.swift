@@ -38,22 +38,11 @@ struct SettingsView: View {
                     Text("App Store'dan ücretsiz \"ntfy\" uygulamasını kurun, \"Yeni\" ile tahmin edilemez bir kanal adı oluşturup kaydedin, sonra \"ntfy uygulamasında abone ol\"a dokunun. Kanal adını bilen herkes bildirimleri görebilir; paylaşmayın.")
                 }
 
-                Section("Son bildirimler") {
-                    if store.notifications.isEmpty {
-                        Text("Henüz bildirim yok").foregroundStyle(.secondary)
-                    }
-                    ForEach(store.notifications) { note in
-                        Button {
-                            if let url = note.url.flatMap(URL.init(string:)) { openURL(url) }
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(note.title).font(.subheadline).foregroundStyle(.primary)
-                                Text(note.body).font(.caption).foregroundStyle(.secondary)
-                                Text(note.sentAt.formatted(.relative(presentation: .named)))
-                                    .font(.caption2).foregroundStyle(.tertiary)
-                            }
-                        }
-                    }
+                Section {
+                    LabeledContent("Takip edilen", value: "\(store.items.count) ürün")
+                    LabeledContent("Kontrol sıklığı", value: "30 saniye")
+                } footer: {
+                    Text("Kontrol sunucuda yapılır; telefon kapalıyken de devam eder.")
                 }
 
                 Section {

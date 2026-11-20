@@ -8,9 +8,9 @@ export interface StoredSize {
 export interface ItemRow {
   id: string;
   user_id: string;
+  brand: string;
   url: string;
   color_id: string | null;
-  name: string | null;
   wanted_sizes: string[];
   sizes: StoredSize[];
 }
@@ -24,24 +24,37 @@ export function isWanted(wanted: string[], size: string): boolean {
   return wanted.length === 0 || wanted.some((w) => norm(w) === norm(size) || base(w) === base(size));
 }
 
+function availableWanted(wanted: string[], sizes: StoredSize[]): Set<string> {
+  return new Set(sizes.filter((s) => isAvailable(s.availability) && isWanted(wanted, s.name)).map((s) => s.name));
+}
+
 /**
- * Sizes the user wants that just became available.
+ * Wanted sizes that came into stock / sold out since the previous check.
  * Nothing is reported on the first check (no previous data), so adding an item
  * that is already in stock does not send a notification.
  */
-export function newlyAvailable(item: Pick<ItemRow, "wanted_sizes" | "sizes">, next: StoredSize[]): string[] {
-  if (item.sizes.length === 0) return [];
-  const before = new Map(item.sizes.map((s) => [norm(s.name), s.availability]));
-  return next
-    .filter((s) => isAvailable(s.availability) && isWanted(item.wanted_sizes, s.name))
-    .filter((s) => {
-      const prev = before.get(norm(s.name));
-      return prev === undefined || !isAvailable(prev);
-    })
-    .map((s) => s.name);
+export function diffSizes(
+  item: Pick<ItemRow, "wanted_sizes" | "sizes">,
+  next: StoredSize[],
+): { cameIn: string[]; wentOut: string[] } {
+  if (item.sizes.length === 0) return { cameIn: [], wentOut: [] };
+  const before = availableWanted(item.wanted_sizes, item.sizes);
+  const after = availableWanted(item.wanted_sizes, next);
+  return {
+    cameIn: [...after].filter((s) => !before.has(s)),
+    wentOut: [...before].filter((s) => !after.has(s)),
+  };
 }
 
 /** Pick the tracked colour of a product (falls back to the first colour). */
 export function pickColor(product: ProductInfo, colorId: string | null) {
   return product.colors.find((c) => c.id === colorId) ?? product.colors[0] ?? null;
+}
+
+/** Product page URL pinned to a colour (Zara's ?v1= parameter). */
+export function colorUrl(url: string, colorId: string | null): string {
+  if (!colorId) return url;
+  const u = new URL(url);
+  u.searchParams.set("v1", colorId);
+  return u.toString();
 }

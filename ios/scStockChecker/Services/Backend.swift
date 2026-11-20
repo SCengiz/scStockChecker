@@ -32,8 +32,17 @@ final class Store {
     var items: [TrackedItem] = []
     var watchlists: [Watchlist] = []
     var profile: Profile?
-    var notifications: [SentNotification] = []
+    var events: [StockEvent] = []
+    var runs: [CheckRun] = []
     var errorMessage: String?
+
+    /// Events newer than this were not seen in the history screen yet (bell badge).
+    var eventsSeenAt: Date = (UserDefaults.standard.object(forKey: "eventsSeenAt") as? Date) ?? .distantPast {
+        didSet { UserDefaults.standard.set(eventsSeenAt, forKey: "eventsSeenAt") }
+    }
+    var unseenEventCount: Int { events.filter { $0.startedAt > eventsSeenAt }.count }
+
+    func item(id: UUID?) -> TrackedItem? { id.flatMap { id in items.first { $0.id == id } } }
 
     /// The session is stored in the keychain by the Supabase SDK, so the user stays
     /// signed in across launches until they sign out.
@@ -64,7 +73,7 @@ final class Store {
     }
 
     private func clear() {
-        items = []; watchlists = []; profile = nil; notifications = []
+        items = []; watchlists = []; profile = nil; events = []; runs = []
     }
 
     func reload() async {
@@ -74,9 +83,11 @@ final class Store {
             async let lists: [Watchlist] = supabase.from("watchlists")
                 .select().order("created_at", ascending: false).execute().value
             async let profiles: [Profile] = supabase.from("profiles").select().execute().value
-            async let notes: [SentNotification] = supabase.from("notifications")
-                .select().order("sent_at", ascending: false).limit(50).execute().value
-            (self.items, self.watchlists, self.notifications) = try await (items, lists, notes)
+            async let events: [StockEvent] = supabase.from("stock_events")
+                .select().order("started_at", ascending: false).limit(200).execute().value
+            async let runs: [CheckRun] = supabase.from("check_runs")
+                .select().order("started_at", ascending: false).limit(100).execute().value
+            (self.items, self.watchlists, self.events, self.runs) = try await (items, lists, events, runs)
             self.profile = try await profiles.first
             errorMessage = nil
         } catch {

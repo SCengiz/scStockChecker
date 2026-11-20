@@ -34,14 +34,23 @@ struct RootView: View {
 }
 
 struct MainTabView: View {
+    @Environment(Store.self) private var store
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
         TabView {
             ItemsView()
                 .tabItem { Label("Takip", systemImage: "bag") }
-            WatchlistsView()
-                .tabItem { Label("Listeler", systemImage: "heart.text.square") }
             SettingsView()
                 .tabItem { Label("Ayarlar", systemImage: "gearshape") }
+        }
+        // The server checks every 30 s; refresh while the app is open so new results show up quickly.
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                await store.reload()
+                try? await Task.sleep(for: .seconds(10))
+            }
         }
     }
 }

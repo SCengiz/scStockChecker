@@ -64,8 +64,13 @@ struct TrackedItem: Codable, Identifiable, Hashable {
 
     /// "M (US M)" -> "m", so a typed "M" matches Zara's longer size labels (same rule as the server).
     static func sizeKey(_ s: String) -> String {
+        shortSize(s).lowercased()
+    }
+
+    /// "M (US M)" -> "M" for compact display.
+    static func shortSize(_ s: String) -> String {
         s.replacingOccurrences(of: #"\s*\(.*\)\s*$"#, with: "", options: .regularExpression)
-            .trimmingCharacters(in: .whitespaces).lowercased()
+            .trimmingCharacters(in: .whitespaces)
     }
 
     /// Wanted sizes that are in stock right now.
@@ -107,16 +112,65 @@ struct Profile: Codable {
     }
 }
 
-struct SentNotification: Codable, Identifiable {
+/// One server-side check of all tracked items.
+struct CheckRun: Codable, Identifiable, Hashable {
     let id: Int
-    let title: String
-    let body: String
-    let url: String?
-    let sentAt: Date
+    let startedAt: Date
+    let durationMs: Int
+    let listsSynced: Int
+    let itemsChecked: Int
+    let itemsFailed: Int
+    let cameIn: Int
+    let error: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, title, body, url
-        case sentAt = "sent_at"
+        case id, error
+        case startedAt = "started_at"
+        case durationMs = "duration_ms"
+        case listsSynced = "lists_synced"
+        case itemsChecked = "items_checked"
+        case itemsFailed = "items_failed"
+        case cameIn = "came_in"
+    }
+
+    var isHealthy: Bool { error == nil && itemsFailed == 0 }
+}
+
+/// "12 sn önce" style text, updated by the caller (e.g. inside a TimelineView).
+func agoText(_ date: Date?, now: Date = .now) -> String {
+    guard let date else { return "henüz yok" }
+    let s = max(0, Int(now.timeIntervalSince(date)))
+    switch s {
+    case ..<60: return "\(s) sn önce"
+    case ..<3600: return "\(s / 60) dk önce"
+    case ..<86400: return "\(s / 3600) sa önce"
+    default: return date.formatted(date: .abbreviated, time: .shortened)
+    }
+}
+
+/// A wanted size that came into stock; `endedAt` is set once it sold out again.
+struct StockEvent: Codable, Identifiable, Hashable {
+    let id: Int
+    let itemId: UUID?
+    let brand: String
+    let productName: String
+    let colorName: String?
+    let sizeName: String
+    let imageUrl: String?
+    let url: String?
+    let startedAt: Date
+    let endedAt: Date?
+    let notified: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, brand, url, notified
+        case itemId = "item_id"
+        case productName = "product_name"
+        case colorName = "color_name"
+        case sizeName = "size_name"
+        case imageUrl = "image_url"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
     }
 }
 
