@@ -15,11 +15,13 @@ export interface ItemRow {
   sizes: StoredSize[];
 }
 
-const norm = (s: string) => s.trim().toLowerCase();
+const norm = (s: string) => s.trim().toLocaleLowerCase("tr");
+/** "M (US M)" -> "m": lets a typed "M" match Zara's longer size labels. */
+const base = (s: string) => norm(s.replace(/\s*\(.*\)\s*$/, ""));
 
 /** True when the user wants this size (an empty list means any size). */
 export function isWanted(wanted: string[], size: string): boolean {
-  return wanted.length === 0 || wanted.some((w) => norm(w) === norm(size));
+  return wanted.length === 0 || wanted.some((w) => norm(w) === norm(size) || base(w) === base(size));
 }
 
 /**
@@ -31,7 +33,7 @@ export function newlyAvailable(item: Pick<ItemRow, "wanted_sizes" | "sizes">, ne
   if (item.sizes.length === 0) return [];
   const before = new Map(item.sizes.map((s) => [norm(s.name), s.availability]));
   return next
-    .filter((s) => isWanted(item.wanted_sizes, s.name) && isAvailable(s.availability))
+    .filter((s) => isAvailable(s.availability) && isWanted(item.wanted_sizes, s.name))
     .filter((s) => {
       const prev = before.get(norm(s.name));
       return prev === undefined || !isAvailable(prev);

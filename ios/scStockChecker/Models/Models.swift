@@ -59,7 +59,13 @@ struct TrackedItem: Codable, Identifiable, Hashable {
     }
 
     func isWanted(_ size: String) -> Bool {
-        wantedSizes.isEmpty || wantedSizes.contains { $0.caseInsensitiveCompare(size) == .orderedSame }
+        wantedSizes.isEmpty || wantedSizes.contains { Self.sizeKey($0) == Self.sizeKey(size) || $0.lowercased() == size.lowercased() }
+    }
+
+    /// "M (US M)" -> "m", so a typed "M" matches Zara's longer size labels (same rule as the server).
+    static func sizeKey(_ s: String) -> String {
+        s.replacingOccurrences(of: #"\s*\(.*\)\s*$"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces).lowercased()
     }
 
     /// Wanted sizes that are in stock right now.

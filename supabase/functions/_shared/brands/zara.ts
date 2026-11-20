@@ -74,8 +74,7 @@ export const zara: BrandAdapter = {
   },
 
   matchesWishlist(url) {
-    // TODO: confirm the shared favourites list URL format with a real link.
-    return isZaraHost(url) && /wishlist|favorites|favourites/i.test(url.pathname);
+    return isZaraHost(url) && WISHLIST_PATH.test(url.pathname);
   },
 
   async fetchProduct(url) {
@@ -89,7 +88,38 @@ export const zara: BrandAdapter = {
     return parseZaraProduct(json, url);
   },
 
-  fetchWishlist(_url): Promise<WishlistInfo> {
-    return Promise.reject(new BrandError("Zara favourites lists are not supported yet"));
+  async fetchWishlist(url) {
+    const m = url.pathname.match(WISHLIST_PATH);
+    if (!m) throw new BrandError("Not a Zara wishlist URL");
+    // The app shares https://www.zara.com/share/wishlist/<token>?locale=tr_TR, which
+    // redirects to /<country>/<lang>/user/share/wishlist/<token>.
+    const [lang, country] = (url.searchParams.get("locale") ?? "tr_TR").toLowerCase().split("_");
+    const cc = m[1] ?? country ?? "tr";
+    const lc = m[2] ?? lang ?? "tr";
+    const api = `https://www.zara.com/${cc}/${lc}/user/share/wishlist/${m[3]}?ajax=true`;
+    const json = await getJson(api, `${lc}-${cc.toUpperCase()},${lc};q=0.9`);
+    return parseZaraWishlist(json, cc, lc);
   },
 };
+
+// https://www.zara.com/share/wishlist/<token> or /tr/tr/user/share/wishlist/<token>
+const WISHLIST_PATH = /^(?:\/([a-z]{2})\/([a-z]{2})\/user)?\/share\/wishlist\/([A-Za-z0-9_-]+)\/?$/;
+
+export function parseZaraWishlist(json: Json, cc: string, lang: string): WishlistInfo {
+  const wishlist = json?.wishlist;
+  if (!wishlist || !Array.isArray(wishlist.items)) throw new BrandError("Zara response has no wishlist data");
+  const items: WishlistInfo["items"] = [];
+  for (const it of wishlist.items) {
+    const p = it?.unprocessedProduct;
+    const keyword = p?.seo?.keyword;
+    const seoId = p?.seo?.seoProductId;
+    if (!keyword || !seoId) continue;
+    // The list stores one colour per entry; its productId is the ?v1= colour id.
+    const colorId = it?.product?.productId ?? p?.seo?.discernProductId ?? null;
+    items.push({
+      url: `https://www.zara.com/${cc}/${lang}/${keyword}-p${seoId}.html`,
+      colorId: colorId == null ? null : String(colorId),
+    });
+  }
+  return { brand: "zara", name: wishlist.name ?? null, items };
+}

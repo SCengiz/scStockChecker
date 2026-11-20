@@ -7,6 +7,13 @@ Deno.test("empty wanted list means any size", () => {
   assertEquals(isWanted(["L"], "M"), false);
 });
 
+Deno.test("short size matches Zara's long label", () => {
+  assertEquals(isWanted(["M"], "M (US M)"), true);
+  assertEquals(isWanted(["m"], "M (US M)"), true);
+  assertEquals(isWanted(["XL"], "L (US L)"), false);
+  assertEquals(isWanted(["38"], "38"), true);
+});
+
 Deno.test("first check never notifies", () => {
   assertEquals(newlyAvailable({ wanted_sizes: ["M"], sizes: [] }, [{ name: "M", availability: "in_stock" }]), []);
 });
