@@ -1,0 +1,10 @@
+// Copy this file to Local.xcconfig (same folder) and fill in your own values.
+// Local.xcconfig is git-ignored.
+
+// Your Apple team id: Xcode > Settings > Accounts > (your Apple ID) > Team.
+// With a free Apple ID this is your "Personal Team" id.
+DEVELOPMENT_TEAM = ABCDE12345
+
+// Something unique to you, e.g. com.yourname. The app id becomes
+// <prefix>.scStockChecker.
+BUNDLE_ID_PREFIX = com.yourname

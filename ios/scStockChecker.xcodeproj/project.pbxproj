@@ -1,0 +1,425 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		054281AB127C71585075C2B9 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = DC957AE5E6844FC26C05631F /* Supabase */; };
+		059129A2E9FC07CE058AE040 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8D767644145209137326759D /* Assets.xcassets */; };
+		16848336B1368A88D16F4D7E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5356067F2429CD800FDB67B /* Models.swift */; };
+		2402BD4E8F68E06C4C5A4C14 /* AddLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F073B11B81DE9108FED019AB /* AddLinkView.swift */; };
+		53CF99AA1B66A24908245AE8 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C0D5C3D055775C1C26B7064 /* ItemDetailView.swift */; };
+		6560217BFA50C09612EB165B /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB8A5B0A8067DCF688FAC75 /* LoginView.swift */; };
+		72339161670144E17B0A85E9 /* ItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10EDE01DA5284CE75C1C414B /* ItemsView.swift */; };
+		789569BBF5EF626609A2138F /* Backend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CB49685DF7C64ECBF778E4 /* Backend.swift */; };
+		8E3452336493E576335D240A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CADEEE5AFF9C2B272525A5AE /* SettingsView.swift */; };
+		99BE16E6FA125D07CE61C7C0 /* WatchlistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A053C84895C2DDE16AF96B9C /* WatchlistsView.swift */; };
+		AAEC7E2EB0D5B32C06E226F8 /* StockCheckerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139A0DE16D0A511C5F736AF3 /* StockCheckerApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		10EDE01DA5284CE75C1C414B /* ItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsView.swift; sourceTree = "<group>"; };
+		139A0DE16D0A511C5F736AF3 /* StockCheckerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockCheckerApp.swift; sourceTree = "<group>"; };
+		2C0D5C3D055775C1C26B7064 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
+		8D767644145209137326759D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		98CB49685DF7C64ECBF778E4 /* Backend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backend.swift; sourceTree = "<group>"; };
+		A053C84895C2DDE16AF96B9C /* WatchlistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchlistsView.swift; sourceTree = "<group>"; };
+		A7BF2F38EDCB76AF8B5595F8 /* scStockChecker.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = scStockChecker.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5356067F2429CD800FDB67B /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		CAD1E19921C962E2D79387AE /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		CADEEE5AFF9C2B272525A5AE /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CF0C063D17BD9CD705B1617F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		EEB8A5B0A8067DCF688FAC75 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		F073B11B81DE9108FED019AB /* AddLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddLinkView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BF03E915E75ED9DDF4A018EC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				054281AB127C71585075C2B9 /* Supabase in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1BF7434B9FEA2812BC14F220 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				98CB49685DF7C64ECBF778E4 /* Backend.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		1D12564A3D5DEC11BC8D76D6 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				139A0DE16D0A511C5F736AF3 /* StockCheckerApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		4EBA1A1365CEB43957DCED8E /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				CAD1E19921C962E2D79387AE /* App.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		6F8F1C12F8E81A08AF65043F /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				C5356067F2429CD800FDB67B /* Models.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		A6187C19C795770788E84C20 /* scStockChecker */ = {
+			isa = PBXGroup;
+			children = (
+				8D767644145209137326759D /* Assets.xcassets */,
+				CF0C063D17BD9CD705B1617F /* Info.plist */,
+				1D12564A3D5DEC11BC8D76D6 /* App */,
+				6F8F1C12F8E81A08AF65043F /* Models */,
+				1BF7434B9FEA2812BC14F220 /* Services */,
+				F60116FAC249B43D323928EC /* Views */,
+			);
+			path = scStockChecker;
+			sourceTree = "<group>";
+		};
+		C5CCCDB9853BB29DE012E637 = {
+			isa = PBXGroup;
+			children = (
+				4EBA1A1365CEB43957DCED8E /* Config */,
+				A6187C19C795770788E84C20 /* scStockChecker */,
+				F0E9D8457806D2D7898678D1 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F0E9D8457806D2D7898678D1 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A7BF2F38EDCB76AF8B5595F8 /* scStockChecker.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F60116FAC249B43D323928EC /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				F073B11B81DE9108FED019AB /* AddLinkView.swift */,
+				2C0D5C3D055775C1C26B7064 /* ItemDetailView.swift */,
+				10EDE01DA5284CE75C1C414B /* ItemsView.swift */,
+				EEB8A5B0A8067DCF688FAC75 /* LoginView.swift */,
+				CADEEE5AFF9C2B272525A5AE /* SettingsView.swift */,
+				A053C84895C2DDE16AF96B9C /* WatchlistsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		EDB9A3B857897DA2C1F9BC51 /* scStockChecker */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0BDB416893DE9A264FB088EF /* Build configuration list for PBXNativeTarget "scStockChecker" */;
+			buildPhases = (
+				4B29B1039FA7B079E4DA7752 /* Sources */,
+				3635D00CA9F6AD4E8D8539DE /* Resources */,
+				BF03E915E75ED9DDF4A018EC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = scStockChecker;
+			packageProductDependencies = (
+				DC957AE5E6844FC26C05631F /* Supabase */,
+			);
+			productName = scStockChecker;
+			productReference = A7BF2F38EDCB76AF8B5595F8 /* scStockChecker.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F8381A136890EAF4ADA3221E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					EDB9A3B857897DA2C1F9BC51 = {
+						DevelopmentTeam = "$(DEVELOPMENT_TEAM)";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 06A8BD87CFE330C2C1DCF228 /* Build configuration list for PBXProject "scStockChecker" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C5CCCDB9853BB29DE012E637;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1642DF96A7FB494BE6FD6F4E /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F0E9D8457806D2D7898678D1 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				EDB9A3B857897DA2C1F9BC51 /* scStockChecker */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3635D00CA9F6AD4E8D8539DE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				059129A2E9FC07CE058AE040 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4B29B1039FA7B079E4DA7752 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2402BD4E8F68E06C4C5A4C14 /* AddLinkView.swift in Sources */,
+				789569BBF5EF626609A2138F /* Backend.swift in Sources */,
+				53CF99AA1B66A24908245AE8 /* ItemDetailView.swift in Sources */,
+				72339161670144E17B0A85E9 /* ItemsView.swift in Sources */,
+				6560217BFA50C09612EB165B /* LoginView.swift in Sources */,
+				16848336B1368A88D16F4D7E /* Models.swift in Sources */,
+				8E3452336493E576335D240A /* SettingsView.swift in Sources */,
+				AAEC7E2EB0D5B32C06E226F8 /* StockCheckerApp.swift in Sources */,
+				99BE16E6FA125D07CE61C7C0 /* WatchlistsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0106C5EA79A8B88FF5B4BD5D /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CAD1E19921C962E2D79387AE /* App.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		50CE2B39051280F06C99D4F7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				INFOPLIST_FILE = scStockChecker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).scStockChecker";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C8C41D84F0D31CC859ABB2A1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CAD1E19921C962E2D79387AE /* App.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		E9D9DF497FE1D41A7D14AAEF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
+				INFOPLIST_FILE = scStockChecker/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "$(BUNDLE_ID_PREFIX).scStockChecker";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		06A8BD87CFE330C2C1DCF228 /* Build configuration list for PBXProject "scStockChecker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C8C41D84F0D31CC859ABB2A1 /* Debug */,
+				0106C5EA79A8B88FF5B4BD5D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		0BDB416893DE9A264FB088EF /* Build configuration list for PBXNativeTarget "scStockChecker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E9D9DF497FE1D41A7D14AAEF /* Debug */,
+				50CE2B39051280F06C99D4F7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1642DF96A7FB494BE6FD6F4E /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DC957AE5E6844FC26C05631F /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1642DF96A7FB494BE6FD6F4E /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F8381A136890EAF4ADA3221E /* Project object */;
+}

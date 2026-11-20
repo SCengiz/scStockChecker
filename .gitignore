@@ -20,3 +20,6 @@ Local.xcconfig
 .env
 *.p12
 *.mobileprovision
+
+# Deno
+.deno/

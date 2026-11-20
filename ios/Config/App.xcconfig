@@ -1,0 +1,13 @@
+// Shared settings. Personal values (signing team, bundle id prefix) go in
+// Local.xcconfig next to this file, which is not committed. See README.
+
+// Backend (Supabase). The anon key is public by design: data is protected by
+// row level security and sign-ups are disabled.
+SUPABASE_URL = https:/$()/YOUR-PROJECT.supabase.co
+SUPABASE_ANON_KEY = YOUR-ANON-KEY
+
+// Defaults, overridden by Local.xcconfig.
+BUNDLE_ID_PREFIX = com.example
+DEVELOPMENT_TEAM =
+
+#include? "Local.xcconfig"
