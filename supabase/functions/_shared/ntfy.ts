@@ -4,6 +4,9 @@ export interface Notification {
   message: string;
   click?: string;
   imageUrl?: string | null;
+  /** 1-5; 5 is "urgent" (time-sensitive on iOS, breaks through Focus). */
+  priority?: number;
+  tags?: string[];
 }
 
 const NTFY_SERVER = Deno.env.get("NTFY_SERVER") ?? "https://ntfy.sh";
@@ -19,8 +22,8 @@ export async function sendNtfy(n: Notification): Promise<void> {
       message: n.message,
       click: n.click,
       attach: n.imageUrl ?? undefined,
-      tags: ["shopping_bags"],
-      priority: 4,
+      tags: n.tags ?? ["shopping_bags"],
+      priority: n.priority ?? 4,
     }),
   });
   if (!res.ok) throw new Error(`ntfy ${res.status}: ${await res.text()}`);

@@ -3,11 +3,13 @@ import SwiftUI
 @main
 struct StockCheckerApp: App {
     @State private var store = Store()
+    @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(store)
+                .preferredColorScheme(theme.colorScheme)
                 .task { await store.start() }
         }
     }
@@ -41,10 +43,12 @@ struct MainTabView: View {
         TabView {
             ItemsView()
                 .tabItem { Label("Takip", systemImage: "bag") }
-            SettingsView()
-                .tabItem { Label("Ayarlar", systemImage: "gearshape") }
+            LogView()
+                .tabItem { Label("Log", systemImage: "waveform.path.ecg") }
+            ProfileView()
+                .tabItem { Label("Profil", systemImage: "person.crop.circle") }
         }
-        // The server checks every 30 s; refresh while the app is open so new results show up quickly.
+        // The server checks every 10-30 s; refresh while the app is open so new results show up quickly.
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {

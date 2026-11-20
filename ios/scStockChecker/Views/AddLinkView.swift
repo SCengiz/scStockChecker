@@ -3,6 +3,10 @@ import SwiftUI
 struct AddLinkView: View {
     @Environment(Store.self) private var store
     @Environment(\.dismiss) private var dismiss
+    /// Link handed over by the share extension; resolved right away.
+    var initialLink: String?
+    /// Called instead of dismiss() when hosted outside a sheet (share extension).
+    var onFinish: (() -> Void)?
 
     @State private var link = ""
     @State private var resolved: ResolvedLink?
@@ -46,9 +50,15 @@ struct AddLinkView: View {
                 }
             }
             .navigationTitle("Link ekle")
+            .task {
+                if let initialLink, link.isEmpty {
+                    link = initialLink
+                    await resolve()
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Vazgeç") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Vazgeç") { close() } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Kaydet") { Task { await save() } }.disabled(resolved == nil || isLoading)
                 }
@@ -118,7 +128,20 @@ struct AddLinkView: View {
         }
     }
 
+    private func close() {
+        if let onFinish { onFinish() } else { dismiss() }
+    }
+
+    /// The first web link in a pasted or shared text ("ÜRÜN ADI https://…" → "https://…").
+    static func extractURL(_ text: String) -> String {
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let range = NSRange(text.startIndex..., in: text)
+        return detector?.firstMatch(in: text, range: range)?.url?.absoluteString
+            ?? text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private func resolve() async {
+        link = Self.extractURL(link)
         let trimmed = link.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         isLoading = true
@@ -152,7 +175,7 @@ struct AddLinkView: View {
                 try await store.addWatchlist(url: link.trimmingCharacters(in: .whitespacesAndNewlines),
                                              brand: wishlist.brand, name: wishlist.name, wantedSizes: sizes)
             }
-            dismiss()
+            close()
         } catch {
             self.error = "Kaydedilemedi: \(error.localizedDescription)"
         }

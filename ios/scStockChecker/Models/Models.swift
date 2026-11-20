@@ -46,9 +46,13 @@ struct TrackedItem: Codable, Identifiable, Hashable {
     var active: Bool
     let lastCheckedAt: Date?
     let lastError: String?
+    let nextCheckAt: Date?
+    let hotReason: String?
 
     enum CodingKeys: String, CodingKey {
         case id, brand, url, name, price, currency, sizes, active
+        case nextCheckAt = "next_check_at"
+        case hotReason = "hot_reason"
         case watchlistId = "watchlist_id"
         case colorId = "color_id"
         case colorName = "color_name"
@@ -71,6 +75,43 @@ struct TrackedItem: Codable, Identifiable, Hashable {
     static func shortSize(_ s: String) -> String {
         s.replacingOccurrences(of: #"\s*\(.*\)\s*$"#, with: "", options: .regularExpression)
             .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Why the server checks this item at the fast rate, in Turkish.
+    var hotReasonText: String? {
+        switch hotReason {
+        case "coming_soon": "Beden yakında geliyor"
+        case "recently_sold_out": "Son 1 saatte tükendi"
+        case "restock_hour": "Genelde bu saatte stoğa giriyor"
+        default: nil
+        }
+    }
+
+    /// Overall state, shown as the item's frame colour.
+    enum StockState {
+        case wantedInStock      // a chosen size is in stock
+        case wantedComingSoon   // a chosen size is announced as coming soon
+        case otherSizesInStock  // only sizes the user did not choose are in stock
+        case soldOut            // nothing in stock
+        case unknown            // not checked yet
+
+        var label: String {
+            switch self {
+            case .wantedInStock: "Bedenin stokta"
+            case .wantedComingSoon: "Bedenin yakında"
+            case .otherSizesInStock: "Başka bedenler stokta"
+            case .soldOut: "Stok yok"
+            case .unknown: "Kontrol bekleniyor"
+            }
+        }
+    }
+
+    var stockState: StockState {
+        if sizes.isEmpty { return .unknown }
+        if !availableWanted.isEmpty { return .wantedInStock }
+        if sizes.contains(where: { isWanted($0.name) && $0.availability == .comingSoon }) { return .wantedComingSoon }
+        if sizes.contains(where: { $0.availability.isAvailable }) { return .otherSizesInStock }
+        return .soldOut
     }
 
     /// Wanted sizes that are in stock right now.
@@ -114,9 +155,11 @@ struct Profile: Codable {
 
 struct AppSettings: Codable {
     let checkIntervalSeconds: Int
+    let hotIntervalSeconds: Int
 
     enum CodingKeys: String, CodingKey {
         case checkIntervalSeconds = "check_interval_seconds"
+        case hotIntervalSeconds = "hot_interval_seconds"
     }
 }
 
@@ -161,9 +204,20 @@ func agoText(_ date: Date?, now: Date = .now) -> String {
     }
 }
 
-/// A wanted size that came into stock; `endedAt` is set once it sold out again.
+/// Something that happened to a tracked item: a wanted size came into stock
+/// (`endedAt` is set once it sold out again), was announced as coming soon, or
+/// the price dropped.
 struct StockEvent: Codable, Identifiable, Hashable {
+    enum Kind: String, Codable {
+        case inStock = "in_stock"
+        case comingSoon = "coming_soon"
+        case priceDrop = "price_drop"
+    }
+
     let id: Int
+    let kind: Kind
+    let price: Double?
+    let oldPrice: Double?
     let itemId: UUID?
     let brand: String
     let productName: String
@@ -176,7 +230,8 @@ struct StockEvent: Codable, Identifiable, Hashable {
     let notified: Bool
 
     enum CodingKeys: String, CodingKey {
-        case id, brand, url, notified
+        case id, kind, brand, url, notified, price
+        case oldPrice = "old_price"
         case itemId = "item_id"
         case productName = "product_name"
         case colorName = "color_name"

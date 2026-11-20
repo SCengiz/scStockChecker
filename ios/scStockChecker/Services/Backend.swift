@@ -19,9 +19,18 @@ enum AppConfig {
         let password = Bundle.main.object(forInfoDictionaryKey: "AutoLoginPassword") as? String ?? ""
         return user.isEmpty || password.isEmpty ? nil : (user, password)
     }
+
+    /// Keychain group shared by the app and its share extension, so both use the same session.
+    static let keychainGroup = Bundle.main.object(forInfoDictionaryKey: "KeychainGroup") as? String
 }
 
-let supabase = SupabaseClient(supabaseURL: AppConfig.supabaseURL, supabaseKey: AppConfig.supabaseKey)
+let supabase = SupabaseClient(
+    supabaseURL: AppConfig.supabaseURL,
+    supabaseKey: AppConfig.supabaseKey,
+    options: SupabaseClientOptions(
+        auth: .init(storage: KeychainLocalStorage(service: "supabase.gotrue.swift", accessGroup: AppConfig.keychainGroup))
+    )
+)
 
 /// App-wide state: the signed-in session and the user's data.
 @MainActor
@@ -36,6 +45,8 @@ final class Store {
     var runs: [CheckRun] = []
     /// Seconds between server-side checks (app_settings, shared by all users).
     var checkInterval = 30
+    /// Seconds between checks for "hot" items (coming soon, just sold out, usual restock hour).
+    var hotInterval = 10
     var errorMessage: String?
 
     /// Events newer than this were not seen in the history screen yet (bell badge).
@@ -91,7 +102,10 @@ final class Store {
                 .select().order("started_at", ascending: false).limit(100).execute().value
             async let settings: [AppSettings] = supabase.from("app_settings").select().execute().value
             (self.items, self.watchlists, self.events, self.runs) = try await (items, lists, events, runs)
-            if let interval = try await settings.first?.checkIntervalSeconds { checkInterval = interval }
+            if let settings = try await settings.first {
+                checkInterval = settings.checkIntervalSeconds
+                hotInterval = settings.hotIntervalSeconds
+            }
             self.profile = try await profiles.first
             errorMessage = nil
         } catch {
@@ -161,6 +175,16 @@ final class Store {
     func setCheckInterval(_ seconds: Int) async throws {
         checkInterval = seconds
         try await supabase.from("app_settings").update(["check_interval_seconds": seconds]).eq("id", value: 1).execute()
+    }
+
+    func setHotInterval(_ seconds: Int) async throws {
+        hotInterval = seconds
+        try await supabase.from("app_settings").update(["hot_interval_seconds": seconds]).eq("id", value: 1).execute()
+    }
+
+    /// In-stock events of one item, newest first.
+    func restocks(of item: TrackedItem) -> [StockEvent] {
+        events.filter { $0.itemId == item.id && $0.kind == .inStock }
     }
 
     func saveNtfyTopic(_ topic: String) async throws {
