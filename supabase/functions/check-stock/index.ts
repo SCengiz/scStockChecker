@@ -1,9 +1,11 @@
 // Called by pg_cron every 10 s while something is due. Syncs favourites lists
 // into tracked items, checks the items whose next_check_at has come, records
 // stock changes (in stock / sold out / coming soon / price drop), notifies via
-// ntfy, and schedules each item's next check: "hot" items at the fast rate.
+// ntfy, and schedules each item's next check from its frequency group
+// (check_tiers); with auto_priority, "hot" items get the Öncelikli rate.
+// When the brand starts blocking us, all checks pause for BACKOFF_MINUTES.
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { type ProductInfo, resolveAdapter } from "../_shared/brands/index.ts";
+import { BrandError, type ProductInfo, resolveAdapter } from "../_shared/brands/index.ts";
 import { json } from "../_shared/cors.ts";
 import { type Notification, sendNtfy } from "../_shared/ntfy.ts";
 import {
@@ -21,22 +23,38 @@ const WATCHLIST_SYNC_MINUTES = 5;
 const CONCURRENCY = 6;
 /** Alert when an item has not been read successfully for this long. */
 const FAILING_ALERT_MINUTES = 10;
+/** Pause after the brand answers 403/429 or with a bot-protection page. */
+const BACKOFF_MINUTES = 5;
+/**
+ * Most product requests per minute we send to a brand. When the configured
+ * intervals would need more, normal items are stretched first (priority
+ * items keep their rate while they fit in the budget).
+ */
+export const MAX_REQUESTS_PER_MINUTE = 30;
 
 type Db = SupabaseClient;
 interface Settings {
-  interval: number;
-  hotInterval: number;
+  /** Interval of the built-in Normal group (items without a group). */
+  normal: number;
+  /** Interval of the built-in Öncelikli group (used for hot items). */
+  priority: number;
+  tiers: Map<string, number>;
   lastHealthAlert: Date | null;
+  backoffUntil: Date | null;
+  /** Multipliers keeping the load inside MAX_REQUESTS_PER_MINUTE (1 = no stretch). */
+  stretch: { priority: number; normal: number };
 }
 interface Item extends ItemRow {
   price: number | null;
   last_ok_at: string | null;
+  tier_id: string | null;
+  auto_priority: boolean;
 }
 interface History {
   lastSoldOut: Date | null;
   restockHours: Set<number>;
 }
-type Stats = { checked: number; failed: number; cameIn: number; hot: number };
+type Stats = { checked: number; failed: number; cameIn: number; hot: number; blocked: string | null };
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const iso = (d = new Date()) => d.toISOString();
@@ -55,13 +73,70 @@ async function mapLimit<T>(items: T[], limit: number, fn: (item: T) => Promise<v
 }
 
 async function loadSettings(db: Db): Promise<Settings> {
-  const { data } = await db.from("app_settings")
-    .select("check_interval_seconds, hot_interval_seconds, last_health_alert_at").eq("id", 1).single();
+  const [{ data: app }, { data: tiers }] = await Promise.all([
+    db.from("app_settings").select("last_health_alert_at, backoff_until").eq("id", 1).single(),
+    db.from("check_tiers").select("id, key, interval_seconds"),
+  ]);
+  const byKey = (k: string) => tiers?.find((t) => t.key === k)?.interval_seconds;
   return {
-    interval: data?.check_interval_seconds ?? 30,
-    hotInterval: data?.hot_interval_seconds ?? 10,
-    lastHealthAlert: data?.last_health_alert_at ? new Date(data.last_health_alert_at) : null,
+    normal: byKey("normal") ?? 30,
+    priority: byKey("priority") ?? 10,
+    tiers: new Map((tiers ?? []).map((t) => [t.id, t.interval_seconds])),
+    lastHealthAlert: app?.last_health_alert_at ? new Date(app.last_health_alert_at) : null,
+    backoffUntil: app?.backoff_until ? new Date(app.backoff_until) : null,
+    stretch: { priority: 1, normal: 1 },
   };
+}
+
+/** Seconds between checks before load limiting: the group's interval, or the Öncelikli rate while hot. */
+function rawInterval(item: Pick<Item, "tier_id" | "auto_priority">, hot: boolean, s: Settings): number {
+  const base = (item.tier_id && s.tiers.get(item.tier_id)) || s.normal;
+  return hot && item.auto_priority ? Math.min(base, s.priority) : base;
+}
+
+function intervalFor(item: Item, hot: boolean, s: Settings): number {
+  const raw = rawInterval(item, hot, s);
+  return Math.round(raw * (raw <= s.priority ? s.stretch.priority : s.stretch.normal));
+}
+
+/**
+ * Work out how much to stretch intervals so that all active items together stay
+ * under MAX_REQUESTS_PER_MINUTE. Products tracked several times count once
+ * (at their fastest rate). Saves the result so the app can show it.
+ */
+async function planLoad(db: Db, s: Settings): Promise<void> {
+  const { data } = await db.from("tracked_items")
+    .select("url, color_id, tier_id, auto_priority, hot_reason").eq("active", true);
+  const fastest = new Map<string, number>();
+  for (const it of data ?? []) {
+    const key = colorUrl(it.url, it.color_id);
+    const iv = rawInterval(it, it.hot_reason != null, s);
+    fastest.set(key, Math.min(fastest.get(key) ?? Infinity, iv));
+  }
+  let priorityLoad = 0, normalLoad = 0;
+  for (const iv of fastest.values()) {
+    if (iv <= s.priority) priorityLoad += 60 / iv;
+    else normalLoad += 60 / iv;
+  }
+  const budget = MAX_REQUESTS_PER_MINUTE;
+  if (priorityLoad + normalLoad <= budget) {
+    s.stretch = { priority: 1, normal: 1 };
+  } else if (priorityLoad < budget * 0.8) {
+    // Keep priority items as they are; give normal items what is left.
+    s.stretch = { priority: 1, normal: normalLoad / (budget - priorityLoad) };
+  } else {
+    const all = (priorityLoad + normalLoad) / budget;
+    s.stretch = { priority: all, normal: all };
+  }
+  await db.from("app_settings").update({
+    load_per_minute: Math.round((priorityLoad + normalLoad) * 10) / 10,
+    load_stretch: Math.round(s.stretch.normal * 100) / 100,
+  }).eq("id", 1);
+}
+
+/** 403/429 or a bot-protection page means the brand is blocking us. */
+function isBlocked(e: unknown): boolean {
+  return e instanceof BrandError && (e.status === 403 || e.status === 429);
 }
 
 async function syncWatchlists(db: Db): Promise<number> {
@@ -131,7 +206,7 @@ async function loadHistory(db: Db, itemIds: string[]): Promise<Map<string, Histo
 async function checkDueItems(db: Db, settings: Settings): Promise<Stats> {
   const [{ data: items, error }, { data: profiles }] = await Promise.all([
     db.from("tracked_items")
-      .select("id, user_id, brand, url, color_id, wanted_sizes, sizes, price, last_ok_at")
+      .select("id, user_id, brand, url, color_id, wanted_sizes, sizes, price, last_ok_at, tier_id, auto_priority")
       .eq("active", true)
       .or(`next_check_at.is.null,next_check_at.lte.${iso(new Date(Date.now() + 2000))}`),
     db.from("profiles").select("user_id, ntfy_topic"),
@@ -149,7 +224,7 @@ async function checkDueItems(db: Db, settings: Settings): Promise<Stats> {
     groups.set(key, [...(groups.get(key) ?? []), it]);
   }
 
-  const stats: Stats = { checked: 0, failed: 0, cameIn: 0, hot: 0 };
+  const stats: Stats = { checked: 0, failed: 0, cameIn: 0, hot: 0, blocked: null };
   await mapLimit([...groups.entries()], CONCURRENCY, async ([url, rows]) => {
     let product: ProductInfo;
     try {
@@ -157,11 +232,12 @@ async function checkDueItems(db: Db, settings: Settings): Promise<Stats> {
       product = await adapter.fetchProduct(parsed);
     } catch (e) {
       stats.failed += rows.length;
+      if (isBlocked(e)) stats.blocked = errorText(e);
       // Retry failing items at the normal rate, not the fast one, to avoid hammering a block.
       await db.from("tracked_items").update({
         last_checked_at: iso(),
         last_error: errorText(e),
-        next_check_at: iso(new Date(Date.now() + settings.interval * 1000)),
+        next_check_at: iso(new Date(Date.now() + Math.max(settings.normal, 60) * 1000)),
       }).in("id", rows.map((r) => r.id));
       return;
     }
@@ -204,7 +280,7 @@ async function applyResult(
     last_ok_at: iso(now),
     last_error: null,
     hot_reason: hot,
-    next_check_at: iso(new Date(now.getTime() + (hot ? settings.hotInterval : settings.interval) * 1000)),
+    next_check_at: iso(new Date(now.getTime() + intervalFor(item, hot !== null, settings) * 1000)),
   }).eq("id", item.id);
   stats.checked++;
 
@@ -331,8 +407,20 @@ Deno.serve(async (req) => {
   let error: string | null = null;
   try {
     const settings = await loadSettings(db);
+    if (settings.backoffUntil && settings.backoffUntil > started) {
+      return json({ skipped: "backoff", until: iso(settings.backoffUntil) });
+    }
     const synced = await syncWatchlists(db);
+    await planLoad(db, settings);
     result = { synced, ...(await checkDueItems(db, settings)) };
+    if (result.blocked) {
+      // Stop everything for a while; hammering a block can turn it into a long ban.
+      await db.from("app_settings").update({
+        backoff_until: iso(new Date(Date.now() + BACKOFF_MINUTES * 60_000)),
+        backoff_reason: result.blocked,
+      }).eq("id", 1);
+      error = `Engellendi, kontroller ${BACKOFF_MINUTES} dk durduruldu: ${result.blocked}`;
+    }
     await alertIfFailing(db, settings);
   } catch (e) {
     error = errorText(e);

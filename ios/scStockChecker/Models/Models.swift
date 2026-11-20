@@ -48,9 +48,13 @@ struct TrackedItem: Codable, Identifiable, Hashable {
     let lastError: String?
     let nextCheckAt: Date?
     let hotReason: String?
+    let tierId: UUID?
+    let autoPriority: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, brand, url, name, price, currency, sizes, active
+        case tierId = "tier_id"
+        case autoPriority = "auto_priority"
         case nextCheckAt = "next_check_at"
         case hotReason = "hot_reason"
         case watchlistId = "watchlist_id"
@@ -154,13 +158,37 @@ struct Profile: Codable {
 }
 
 struct AppSettings: Codable {
-    let checkIntervalSeconds: Int
-    let hotIntervalSeconds: Int
+    /// Requests per minute the current settings need (written by check-stock).
+    let loadPerMinute: Double
+    /// How much normal intervals are stretched to stay in the budget (1 = not at all).
+    let loadStretch: Double
+    /// All checks are paused until then after the brand started blocking us.
+    let backoffUntil: Date?
+    let backoffReason: String?
 
     enum CodingKeys: String, CodingKey {
-        case checkIntervalSeconds = "check_interval_seconds"
-        case hotIntervalSeconds = "hot_interval_seconds"
+        case loadPerMinute = "load_per_minute"
+        case loadStretch = "load_stretch"
+        case backoffUntil = "backoff_until"
+        case backoffReason = "backoff_reason"
     }
+}
+
+/// A check-frequency group: built-in "Normal" / "Öncelikli" or one the users added.
+struct CheckTier: Codable, Identifiable, Hashable {
+    let id: UUID
+    let key: String?
+    let name: String
+    let intervalSeconds: Int
+
+    enum CodingKeys: String, CodingKey {
+        case id, key, name
+        case intervalSeconds = "interval_seconds"
+    }
+
+    var isBuiltIn: Bool { key != nil }
+    var sortRank: Int { key == "normal" ? 0 : key == "priority" ? 1 : 2 }
+    var icon: String { key == "normal" ? "clock" : key == "priority" ? "bolt.fill" : "timer" }
 }
 
 /// "30 sn", "2 dk"

@@ -1,13 +1,25 @@
 import SwiftUI
 
 /// "Takip" tab: summary, single products as cards, favourites lists as compact groups.
+/// Search filters by name/colour; "Seç" picks several items to move to a frequency group.
 struct ItemsView: View {
     @Environment(Store.self) private var store
     @State private var showAdd = false
     @State private var showHistory = false
     @State private var editingList: Watchlist?
+    @State private var query = ""
+    @State private var selecting = false
+    @State private var selected: Set<UUID> = []
 
-    private var singles: [TrackedItem] { store.items.filter { $0.watchlistId == nil } }
+    private func matches(_ item: TrackedItem) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return true }
+        return [item.name, item.colorName, store.tier(of: item)?.name].contains { $0?.localizedCaseInsensitiveContains(q) == true }
+    }
+
+    private var visible: [TrackedItem] { store.items.filter(matches) }
+    private var singles: [TrackedItem] { visible.filter { $0.watchlistId == nil } }
+    private var selection: Binding<Set<UUID>>? { selecting ? $selected : nil }
 
     var body: some View {
         NavigationStack {
@@ -17,18 +29,20 @@ struct ItemsView: View {
                         Label(message, systemImage: "wifi.exclamationmark")
                             .font(.footnote).foregroundStyle(Palette.soldOut)
                     }
-                    summary
+                    if query.isEmpty { summary }
                     if store.items.isEmpty && store.watchlists.isEmpty {
                         emptyState
+                    } else if visible.isEmpty {
+                        ContentUnavailableView.search(text: query)
                     }
                     if !singles.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             SectionTitle("Ürünler") { Text("\(singles.count)").font(.caption).foregroundStyle(.secondary) }
                             ForEach(singles) { item in
-                                NavigationLink(value: item) { ItemCard(item: item) }
-                                    .buttonStyle(.plain)
+                                SelectableLink(item: item, selection: selection) { ItemCard(item: item) }
                                     .contextMenu {
                                         if let url = item.productURL { Link("Mağazada aç", destination: url) }
+                                        TierMenuItems(itemIds: [item.id])
                                         Button("Takipten çıkar", systemImage: "trash", role: .destructive) {
                                             Task { try? await store.delete(item: item) }
                                         }
@@ -37,8 +51,11 @@ struct ItemsView: View {
                         }
                     }
                     ForEach(store.watchlists) { list in
-                        WatchlistGroup(list: list, items: store.items.filter { $0.watchlistId == list.id }) {
-                            editingList = list
+                        let items = visible.filter { $0.watchlistId == list.id }
+                        if query.isEmpty || !items.isEmpty {
+                            WatchlistGroup(list: list, items: items, selection: selection) {
+                                editingList = list
+                            }
                         }
                     }
                 }
@@ -47,17 +64,25 @@ struct ItemsView: View {
             }
             .background(Palette.page)
             .navigationTitle("Takip")
+            .searchable(text: $query, prompt: "Ürün, renk veya grup ara")
             .refreshable { await store.reload() }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showAdd = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Link ekle")
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if !store.items.isEmpty {
+                        Button(selecting ? "Bitti" : "Seç") {
+                            selecting.toggle()
+                            selected = []
+                        }
+                    }
                     Button { showHistory = true } label: { BellIcon(count: store.unseenEventCount) }
                         .accessibilityLabel("Stok geçmişi")
                 }
             }
+            .safeAreaInset(edge: .bottom) { if selecting { selectionBar } }
             .sheet(isPresented: $showAdd) { AddLinkView() }
             .sheet(isPresented: $showHistory) { HistoryView() }
             .sheet(item: $editingList) { WatchlistSizesView(list: $0) }
@@ -65,11 +90,33 @@ struct ItemsView: View {
         }
     }
 
+    /// Bottom bar in select mode: count, select all, and the frequency menu.
+    private var selectionBar: some View {
+        HStack(spacing: 12) {
+            Button(selected.count == visible.count ? "Hiçbiri" : "Tümü") {
+                selected = selected.count == visible.count ? [] : Set(visible.map(\.id))
+            }
+            Spacer()
+            Text("\(selected.count) seçili").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
+            Spacer()
+            Menu {
+                TierMenuItems(itemIds: Array(selected))
+            } label: {
+                Label("Sıklık", systemImage: "timer").font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(selected.isEmpty)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(.bar)
+    }
+
     private var summary: some View {
         HStack(spacing: 10) {
             StatTile(value: "\(store.items.count)", label: "Takipte")
             StatTile(value: "\(store.items.filter { !$0.availableWanted.isEmpty }.count)", label: "Stokta", color: Palette.inStock)
-            StatTile(value: "\(store.items.filter { $0.hotReason != nil }.count)", label: "Öncelikli", color: Palette.priority)
+            StatTile(value: "\(store.items.filter { $0.active && store.interval(of: $0) <= store.hotInterval }.count)",
+                     label: "Öncelikli", color: Palette.priority)
         }
     }
 
@@ -84,6 +131,35 @@ struct ItemsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
+        }
+    }
+}
+
+/// Opens the item normally; in select mode toggles it instead and shows a checkmark.
+struct SelectableLink<Content: View>: View {
+    let item: TrackedItem
+    let selection: Binding<Set<UUID>>?
+    var inset: CGFloat = 0
+    @ViewBuilder let label: () -> Content
+
+    var body: some View {
+        if let selection {
+            let on = selection.wrappedValue.contains(item.id)
+            Button {
+                if on { selection.wrappedValue.remove(item.id) } else { selection.wrappedValue.insert(item.id) }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: on ? "checkmark.circle.fill" : "circle")
+                        .font(.title3)
+                        .foregroundStyle(on ? Color.accentColor : Color.secondary)
+                        .padding(.leading, inset)
+                    label()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        } else {
+            NavigationLink(value: item) { label() }.buttonStyle(.plain)
         }
     }
 }
@@ -118,13 +194,16 @@ struct ItemCard: View {
 }
 
 struct ItemBadges: View {
+    @Environment(Store.self) private var store
     let item: TrackedItem
 
     var body: some View {
         if item.stockState != .unknown {
             Pill(text: item.stockState.label, color: item.stockState.color)
         }
-        if item.hotReason != nil {
+        if let tier = store.tier(of: item), tier.key != "normal" {
+            Pill(text: tier.name, systemImage: tier.icon, color: Palette.priority)
+        } else if item.hotReason != nil && item.autoPriority {
             Pill(text: "Öncelikli", systemImage: "bolt.fill", color: Palette.priority)
         }
         if !item.active {
@@ -138,6 +217,7 @@ struct WatchlistGroup: View {
     @Environment(Store.self) private var store
     let list: Watchlist
     let items: [TrackedItem]
+    var selection: Binding<Set<UUID>>? = nil
     let onEdit: () -> Void
 
     /// The list's frame shows its best item state, so a list with something in stock stands out.
@@ -153,8 +233,13 @@ struct WatchlistGroup: View {
             SectionTitle(list.name ?? "\(list.brand.brandDisplayName) listesi") {
                 HStack(spacing: 10) {
                     Text("\(items.count) ürün").font(.caption).foregroundStyle(.secondary)
+                    if let selection {
+                        Button("Listeyi seç") { selection.wrappedValue.formUnion(items.map(\.id)) }
+                            .font(.caption.weight(.medium))
+                    }
                     Menu {
                         Button("Bedenleri düzenle", systemImage: "ruler", action: onEdit)
+                        TierMenuItems(itemIds: items.map(\.id))
                         if let url = URL(string: list.url) { Link("Listeyi Zara'da aç", destination: url) }
                         Button("Listeyi sil", systemImage: "trash", role: .destructive) {
                             Task { try? await store.delete(watchlist: list) }
@@ -173,8 +258,7 @@ struct WatchlistGroup: View {
                             .padding(14)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        NavigationLink(value: item) { CompactItemRow(item: item) }
-                            .buttonStyle(.plain)
+                        SelectableLink(item: item, selection: selection, inset: 10) { CompactItemRow(item: item) }
                         if index < items.count - 1 { Divider().padding(.leading, 60) }
                     }
                 }
@@ -194,7 +278,7 @@ struct CompactItemRow: View {
             ProductImage(url: item.imageUrl, cornerRadius: 6).frame(width: 36, height: 54)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 5) {
-                    if item.hotReason != nil { Image(systemName: "bolt.fill").font(.system(size: 9)).foregroundStyle(Palette.priority) }
+                    if item.hotReason != nil && item.autoPriority { Image(systemName: "bolt.fill").font(.system(size: 9)).foregroundStyle(Palette.priority) }
                     Text(item.name ?? "Yükleniyor…")
                         .font(.footnote.weight(.medium)).lineLimit(1)
                 }

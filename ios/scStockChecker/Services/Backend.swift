@@ -43,11 +43,46 @@ final class Store {
     var profile: Profile?
     var events: [StockEvent] = []
     var runs: [CheckRun] = []
-    /// Seconds between server-side checks (app_settings, shared by all users).
-    var checkInterval = 30
-    /// Seconds between checks for "hot" items (coming soon, just sold out, usual restock hour).
-    var hotInterval = 10
+    /// Check-frequency groups, built-in Normal and Öncelikli first.
+    var tiers: [CheckTier] = []
+    var settings: AppSettings?
     var errorMessage: String?
+
+    /// Most product requests per minute the server sends (same value as check-stock).
+    static let requestBudget = 30.0
+
+    var normalTier: CheckTier? { tiers.first { $0.key == "normal" } }
+    var priorityTier: CheckTier? { tiers.first { $0.key == "priority" } }
+    /// Seconds between checks for items in the Normal group.
+    var checkInterval: Int { normalTier?.intervalSeconds ?? 30 }
+    /// Seconds between checks for "hot" items (coming soon, just sold out, usual restock hour).
+    var hotInterval: Int { priorityTier?.intervalSeconds ?? 10 }
+
+    func tier(of item: TrackedItem) -> CheckTier? {
+        item.tierId.flatMap { id in tiers.first { $0.id == id } } ?? normalTier
+    }
+
+    /// Seconds between checks for an item right now (before load limiting).
+    func interval(of item: TrackedItem) -> Int {
+        let base = tier(of: item)?.intervalSeconds ?? checkInterval
+        return item.hotReason != nil && item.autoPriority ? min(base, hotInterval) : base
+    }
+
+    /// Requests per minute the active items need, counting a product tracked twice once.
+    /// `override` previews a change (e.g. a group's new interval) before saving it.
+    func estimatedLoad(override: (tierId: UUID, seconds: Int)? = nil) -> Double {
+        var fastest: [String: Int] = [:]
+        for item in items where item.active {
+            var base = tier(of: item)?.intervalSeconds ?? checkInterval
+            if let override, (item.tierId ?? normalTier?.id) == override.tierId { base = override.seconds }
+            var hot = hotInterval
+            if let override, override.tierId == priorityTier?.id { hot = override.seconds }
+            let iv = item.hotReason != nil && item.autoPriority ? min(base, hot) : base
+            let key = item.productURL?.absoluteString ?? item.url
+            fastest[key] = min(fastest[key] ?? .max, iv)
+        }
+        return fastest.values.reduce(0) { $0 + 60 / Double(max($1, 1)) }
+    }
 
     /// Events newer than this were not seen in the history screen yet (bell badge).
     var eventsSeenAt: Date = (UserDefaults.standard.object(forKey: "eventsSeenAt") as? Date) ?? .distantPast {
@@ -101,11 +136,11 @@ final class Store {
             async let runs: [CheckRun] = supabase.from("check_runs")
                 .select().order("started_at", ascending: false).limit(100).execute().value
             async let settings: [AppSettings] = supabase.from("app_settings").select().execute().value
+            async let tiers: [CheckTier] = supabase.from("check_tiers")
+                .select().order("created_at").execute().value
             (self.items, self.watchlists, self.events, self.runs) = try await (items, lists, events, runs)
-            if let settings = try await settings.first {
-                checkInterval = settings.checkIntervalSeconds
-                hotInterval = settings.hotIntervalSeconds
-            }
+            self.settings = try await settings.first
+            self.tiers = try await tiers.sorted { ($0.sortRank, $0.intervalSeconds) < ($1.sortRank, $1.intervalSeconds) }
             self.profile = try await profiles.first
             errorMessage = nil
         } catch {
@@ -172,14 +207,36 @@ final class Store {
         await reload()
     }
 
-    func setCheckInterval(_ seconds: Int) async throws {
-        checkInterval = seconds
-        try await supabase.from("app_settings").update(["check_interval_seconds": seconds]).eq("id", value: 1).execute()
+    // MARK: Frequency groups
+
+    func saveTier(id: UUID?, name: String, seconds: Int) async throws {
+        struct Row: Encodable { let name: String; let interval_seconds: Int }
+        let row = Row(name: name.trimmingCharacters(in: .whitespaces), interval_seconds: seconds)
+        if let id {
+            try await supabase.from("check_tiers").update(row).eq("id", value: id).execute()
+        } else {
+            try await supabase.from("check_tiers").insert(row).execute()
+        }
+        await reload()
     }
 
-    func setHotInterval(_ seconds: Int) async throws {
-        hotInterval = seconds
-        try await supabase.from("app_settings").update(["hot_interval_seconds": seconds]).eq("id", value: 1).execute()
+    func deleteTier(_ tier: CheckTier) async throws {
+        try await supabase.from("check_tiers").delete().eq("id", value: tier.id).execute()
+        await reload()
+    }
+
+    /// Put items in a group (nil = Normal) and check them under the new rate right away.
+    func setTier(_ tierId: UUID?, for itemIds: [UUID]) async throws {
+        struct Change: Encodable { let tier_id: UUID?; let next_check_at: Date }
+        let id = tierId == normalTier?.id ? nil : tierId
+        try await supabase.from("tracked_items").update(Change(tier_id: id, next_check_at: .now))
+            .in("id", values: itemIds).execute()
+        await reload()
+    }
+
+    func setAutoPriority(_ on: Bool, for itemIds: [UUID]) async throws {
+        try await supabase.from("tracked_items").update(["auto_priority": on]).in("id", values: itemIds).execute()
+        await reload()
     }
 
     /// In-stock events of one item, newest first.

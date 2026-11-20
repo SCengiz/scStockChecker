@@ -15,6 +15,7 @@ struct ItemDetailView: View {
                 VStack(alignment: .leading, spacing: 22) {
                     header(item)
                     sizes(item)
+                    frequency(item)
                     history(item)
                     settings(item)
                 }
@@ -91,6 +92,49 @@ struct ItemDetailView: View {
         }
     }
 
+    private func frequency(_ item: TrackedItem) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionTitle("Kontrol sıklığı")
+            Card {
+                VStack(alignment: .leading, spacing: 12) {
+                    Picker(selection: Binding(
+                        get: { store.tier(of: item)?.id },
+                        set: { id in Task { try? await store.setTier(id, for: [item.id]) } }
+                    )) {
+                        ForEach(store.tiers) { tier in
+                            Text("\(tier.name) · \(intervalText(tier.intervalSeconds))").tag(Optional(tier.id))
+                        }
+                    } label: {
+                        Label("Grup", systemImage: store.tier(of: item)?.icon ?? "clock")
+                    }
+                    .pickerStyle(.menu)
+                    Divider()
+                    Toggle(isOn: Binding(
+                        get: { item.autoPriority },
+                        set: { value in Task { try? await store.setAutoPriority(value, for: [item.id]) } }
+                    )) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Otomatik öncelik")
+                            Text("Beden yakında, yeni tükenmiş veya genelde geldiği saatteyse \(intervalText(store.hotInterval))'de bir kontrol edilir.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Divider()
+                    HStack {
+                        Text("Şu anki aralık").font(.subheadline)
+                        Spacer()
+                        Text(intervalText(store.interval(of: item)))
+                            .font(.subheadline.monospacedDigit().weight(.semibold))
+                    }
+                    if let reason = item.hotReasonText, item.autoPriority {
+                        Label("Öncelikli: \(reason)", systemImage: "bolt.fill")
+                            .font(.footnote.weight(.medium)).foregroundStyle(Palette.priority)
+                    }
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private func history(_ item: TrackedItem) -> some View {
         let restocks = store.restocks(of: item)
@@ -98,10 +142,6 @@ struct ItemDetailView: View {
             SectionTitle("Stok geçmişi")
             Card {
                 VStack(alignment: .leading, spacing: 10) {
-                    if let reason = item.hotReasonText {
-                        Label("Öncelikli kontrol (\(intervalText(store.hotInterval))): \(reason)", systemImage: "bolt.fill")
-                            .font(.footnote.weight(.medium)).foregroundStyle(Palette.priority)
-                    }
                     if restocks.isEmpty {
                         Text("Bu ürün takibe alındığından beri seçili bedenlerde stoğa girmedi.")
                             .font(.footnote).foregroundStyle(.secondary)

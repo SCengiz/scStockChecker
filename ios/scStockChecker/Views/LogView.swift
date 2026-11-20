@@ -29,27 +29,40 @@ struct LogView: View {
 
     private func statusCard(now: Date) -> some View {
         let last = store.runs.first
-        let late = last.map { now.timeIntervalSince($0.startedAt) > Double(store.checkInterval) + 45 } ?? true
+        let stretch = store.settings?.loadStretch ?? 1
+        let backoff = store.settings?.backoffUntil.flatMap { $0 > now ? $0 : nil }
+        let late = backoff == nil
+            && (last.map { now.timeIntervalSince($0.startedAt) > Double(store.checkInterval) * stretch + 45 } ?? true)
         let failing = last.map { !$0.isHealthy } ?? false
-        let color: Color = late ? Palette.warning : failing ? Palette.soldOut : Palette.inStock
+        let color: Color = backoff != nil ? Palette.soldOut : late ? Palette.warning : failing ? Palette.soldOut : Palette.inStock
         let next = store.items.filter(\.active).compactMap(\.nextCheckAt).min()
+        let load = store.settings?.loadPerMinute ?? 0
 
         return Card {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 10) {
-                    LiveDot(color: color, animated: !late)
-                    Text(late ? "Kontrol gecikti" : failing ? "Bazı ürünler okunamadı" : "Kontrol çalışıyor")
+                    LiveDot(color: color, animated: !late && backoff == nil)
+                    Text(backoff != nil ? "Kontroller duraklatıldı" : late ? "Kontrol gecikti" : failing ? "Bazı ürünler okunamadı" : "Kontrol çalışıyor")
                         .font(.headline)
                     Spacer()
                 }
                 HStack(alignment: .top) {
                     labeled("Son kontrol", agoText(last?.startedAt, now: now))
                     Spacer()
-                    labeled("Sıradaki", next.map { untilText($0, now: now) } ?? "—")
+                    labeled("Sıradaki", backoff.map { untilText($0, now: now) } ?? next.map { untilText($0, now: now) } ?? "—")
                     Spacer()
-                    labeled("Sıklık", "\(intervalText(store.checkInterval)) / \(intervalText(store.hotInterval))")
+                    labeled("Yük", "\(Int(load.rounded())) / \(Int(Store.requestBudget)) /dk")
                 }
-                Text("Normal ürünler \(intervalText(store.checkInterval)), öncelikli ürünler \(intervalText(store.hotInterval)) arayla kontrol edilir. Favori listeleri 5 dakikada bir yeniden okunur.")
+                if let backoff {
+                    Label("Zara engelleme sinyali verdi (\(store.settings?.backoffReason ?? "bilinmiyor")). Hesabınızı ve IP'yi korumak için tüm kontroller \(backoff.formatted(date: .omitted, time: .shortened))'e kadar bekliyor.",
+                          systemImage: "hand.raised.fill")
+                        .font(.caption.weight(.medium)).foregroundStyle(Palette.soldOut)
+                } else if stretch > 1.05 {
+                    Label(String(format: "Yük sınırı aşıldı: normal aralıklar %.1f kat uzatıldı. Profil > Kontrol sıklığı'ndan azaltabilirsiniz.", stretch),
+                          systemImage: "tortoise.fill")
+                        .font(.caption).foregroundStyle(Palette.warning)
+                }
+                Text("Her ürün kendi grubunun aralığıyla kontrol edilir (Normal \(intervalText(store.checkInterval)), Öncelikli \(intervalText(store.hotInterval))). Sunucu dakikada en çok \(Int(Store.requestBudget)) istek atar; engellenirse 5 dakika bekler. Favori listeleri 5 dakikada bir yeniden okunur.")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }

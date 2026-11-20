@@ -8,8 +8,6 @@ struct ProfileView: View {
     @State private var message: String?
     @AppStorage(AppTheme.storageKey) private var theme: AppTheme = .system
 
-    static let intervals = [10, 15, 20, 30, 45, 60, 120, 300, 600]
-    static let hotIntervals = [10, 15, 20, 30, 60]
 
     private var name: String { store.profile?.displayName ?? "Kullanıcı" }
     private var savedTopic: String? { store.profile?.ntfyTopic.flatMap { $0.isEmpty ? nil : $0 } }
@@ -44,26 +42,29 @@ struct ProfileView: View {
                 }
 
                 Section {
-                    Picker(selection: Binding(
-                        get: { store.checkInterval },
-                        set: { value in Task { try? await store.setCheckInterval(value) } }
-                    )) {
-                        ForEach(Self.intervals, id: \.self) { Text(intervalText($0)).tag($0) }
-                    } label: {
-                        Label("Normal sıklık", systemImage: "clock")
+                    LoadGauge()
+                    ForEach(store.tiers) { tier in
+                        NavigationLink {
+                            TierEditView(tier: tier)
+                        } label: {
+                            TierRow(tier: tier, count: store.items.filter { store.tier(of: $0)?.id == tier.id }.count)
+                        }
+                        .deleteDisabled(tier.isBuiltIn)
                     }
-                    Picker(selection: Binding(
-                        get: { store.hotInterval },
-                        set: { value in Task { try? await store.setHotInterval(value) } }
-                    )) {
-                        ForEach(Self.hotIntervals, id: \.self) { Text(intervalText($0)).tag($0) }
+                    .onDelete { offsets in
+                        for tier in offsets.map({ store.tiers[$0] }) where !tier.isBuiltIn {
+                            Task { try? await store.deleteTier(tier) }
+                        }
+                    }
+                    NavigationLink {
+                        TierEditView(tier: nil)
                     } label: {
-                        Label("Öncelikli sıklık", systemImage: "bolt")
+                        Label("Sıklık grubu ekle", systemImage: "plus.circle")
                     }
                 } header: {
-                    Text("Kontrol")
+                    Text("Kontrol sıklığı")
                 } footer: {
-                    Text("Öncelikli ürünler: istenen bedeni \"yakında\" olanlar, son 1 saatte tükenenler ve daha önce stoğa girdiği saat dilimindekiler. Kontrol sunucuda yapılır; telefon kapalıyken de devam eder. Çok sık kontrol, markanın bot korumasına takılma riskini artırır.")
+                    Text("Her ürün bir gruba bağlıdır (varsayılan Normal); ürün detayından veya Takip ekranında \"Seç\" ile toplu değiştirebilirsiniz. \"Otomatik öncelik\" açık ürünler; istenen beden yakında olduğunda, son 1 saatte tükendiğinde ya da genelde geldiği saatte Öncelikli hızda kontrol edilir. Silinen gruptaki ürünler Normal'e döner.")
                 }
 
                 Section {

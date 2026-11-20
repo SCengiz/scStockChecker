@@ -26,6 +26,7 @@
 		A6AF0A71FFCDEF4ECAC6F645 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49474E061F448C615167AC0 /* HistoryView.swift */; };
 		AAEC7E2EB0D5B32C06E226F8 /* StockCheckerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 139A0DE16D0A511C5F736AF3 /* StockCheckerApp.swift */; };
 		B09DB30820615F90C167B0DE /* LogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2E0151801DEC6E95CE92D8 /* LogView.swift */; };
+		BDF0A2A4B48C8E9A6BAA051B /* TierViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10730B3AC15318AC2D04066D /* TierViews.swift */; };
 		C7C63DDC73B0C5ECF4AD67F6 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E8DBF31291539078F0F150 /* Components.swift */; };
 		F543A7D04AEB42D70087FE43 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = E43BCF36D923C0E75B38D6D9 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -56,6 +57,7 @@
 
 /* Begin PBXFileReference section */
 		0C2E0151801DEC6E95CE92D8 /* LogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogView.swift; sourceTree = "<group>"; };
+		10730B3AC15318AC2D04066D /* TierViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TierViews.swift; sourceTree = "<group>"; };
 		10EDE01DA5284CE75C1C414B /* ItemsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemsView.swift; sourceTree = "<group>"; };
 		139A0DE16D0A511C5F736AF3 /* StockCheckerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StockCheckerApp.swift; sourceTree = "<group>"; };
 		2C0D5C3D055775C1C26B7064 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				EEB8A5B0A8067DCF688FAC75 /* LoginView.swift */,
 				0C2E0151801DEC6E95CE92D8 /* LogView.swift */,
 				A22438BE0E5D24D2AA4F0980 /* ProfileView.swift */,
+				10730B3AC15318AC2D04066D /* TierViews.swift */,
 				4D8142D7F7C5A8AE37779C6C /* WatchlistSizesView.swift */,
 			);
 			path = Views;
@@ -302,6 +305,7 @@
 				16848336B1368A88D16F4D7E /* Models.swift in Sources */,
 				212B3F3C10C054F03A519030 /* ProfileView.swift in Sources */,
 				AAEC7E2EB0D5B32C06E226F8 /* StockCheckerApp.swift in Sources */,
+				BDF0A2A4B48C8E9A6BAA051B /* TierViews.swift in Sources */,
 				818548DBDDD29B644D143CE8 /* WatchlistSizesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
