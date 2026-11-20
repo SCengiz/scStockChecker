@@ -1,15 +1,13 @@
 import SwiftUI
 
 /// "Takip" tab: summary, single products as cards, favourites lists as compact groups.
-/// Search filters by name/colour; "Seç" picks several items to move to a frequency group.
+/// Search filters by name, colour or frequency group.
 struct ItemsView: View {
     @Environment(Store.self) private var store
     @State private var showAdd = false
     @State private var showHistory = false
     @State private var editingList: Watchlist?
     @State private var query = ""
-    @State private var selecting = false
-    @State private var selected: Set<UUID> = []
 
     private func matches(_ item: TrackedItem) -> Bool {
         let q = query.trimmingCharacters(in: .whitespaces)
@@ -19,7 +17,6 @@ struct ItemsView: View {
 
     private var visible: [TrackedItem] { store.items.filter(matches) }
     private var singles: [TrackedItem] { visible.filter { $0.watchlistId == nil } }
-    private var selection: Binding<Set<UUID>>? { selecting ? $selected : nil }
 
     var body: some View {
         NavigationStack {
@@ -39,7 +36,8 @@ struct ItemsView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             SectionTitle("Ürünler") { Text("\(singles.count)").font(.caption).foregroundStyle(.secondary) }
                             ForEach(singles) { item in
-                                SelectableLink(item: item, selection: selection) { ItemCard(item: item) }
+                                NavigationLink(value: item) { ItemCard(item: item) }
+                                    .buttonStyle(.plain)
                                     .contextMenu {
                                         if let url = item.productURL { Link("Mağazada aç", destination: url) }
                                         TierMenuItems(itemIds: [item.id])
@@ -53,7 +51,7 @@ struct ItemsView: View {
                     ForEach(store.watchlists) { list in
                         let items = visible.filter { $0.watchlistId == list.id }
                         if query.isEmpty || !items.isEmpty {
-                            WatchlistGroup(list: list, items: items, selection: selection) {
+                            WatchlistGroup(list: list, items: items) {
                                 editingList = list
                             }
                         }
@@ -71,44 +69,16 @@ struct ItemsView: View {
                     Button { showAdd = true } label: { Image(systemName: "plus") }
                         .accessibilityLabel("Link ekle")
                 }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    if !store.items.isEmpty {
-                        Button(selecting ? "Bitti" : "Seç") {
-                            selecting.toggle()
-                            selected = []
-                        }
-                    }
+                ToolbarItem(placement: .topBarTrailing) {
                     Button { showHistory = true } label: { BellIcon(count: store.unseenEventCount) }
                         .accessibilityLabel("Stok geçmişi")
                 }
             }
-            .safeAreaInset(edge: .bottom) { if selecting { selectionBar } }
             .sheet(isPresented: $showAdd) { AddLinkView() }
             .sheet(isPresented: $showHistory) { HistoryView() }
             .sheet(item: $editingList) { WatchlistSizesView(list: $0) }
             .navigationDestination(for: TrackedItem.self) { ItemDetailView(itemId: $0.id) }
         }
-    }
-
-    /// Bottom bar in select mode: count, select all, and the frequency menu.
-    private var selectionBar: some View {
-        HStack(spacing: 12) {
-            Button(selected.count == visible.count ? "Hiçbiri" : "Tümü") {
-                selected = selected.count == visible.count ? [] : Set(visible.map(\.id))
-            }
-            Spacer()
-            Text("\(selected.count) seçili").font(.subheadline.weight(.medium)).foregroundStyle(.secondary)
-            Spacer()
-            Menu {
-                TierMenuItems(itemIds: Array(selected))
-            } label: {
-                Label("Sıklık", systemImage: "timer").font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(selected.isEmpty)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(.bar)
     }
 
     private var summary: some View {
@@ -131,35 +101,6 @@ struct ItemsView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-        }
-    }
-}
-
-/// Opens the item normally; in select mode toggles it instead and shows a checkmark.
-struct SelectableLink<Content: View>: View {
-    let item: TrackedItem
-    let selection: Binding<Set<UUID>>?
-    var inset: CGFloat = 0
-    @ViewBuilder let label: () -> Content
-
-    var body: some View {
-        if let selection {
-            let on = selection.wrappedValue.contains(item.id)
-            Button {
-                if on { selection.wrappedValue.remove(item.id) } else { selection.wrappedValue.insert(item.id) }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundStyle(on ? Color.accentColor : Color.secondary)
-                        .padding(.leading, inset)
-                    label()
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        } else {
-            NavigationLink(value: item) { label() }.buttonStyle(.plain)
         }
     }
 }
@@ -217,7 +158,6 @@ struct WatchlistGroup: View {
     @Environment(Store.self) private var store
     let list: Watchlist
     let items: [TrackedItem]
-    var selection: Binding<Set<UUID>>? = nil
     let onEdit: () -> Void
 
     /// The list's frame shows its best item state, so a list with something in stock stands out.
@@ -233,10 +173,6 @@ struct WatchlistGroup: View {
             SectionTitle(list.name ?? "\(list.brand.brandDisplayName) listesi") {
                 HStack(spacing: 10) {
                     Text("\(items.count) ürün").font(.caption).foregroundStyle(.secondary)
-                    if let selection {
-                        Button("Listeyi seç") { selection.wrappedValue.formUnion(items.map(\.id)) }
-                            .font(.caption.weight(.medium))
-                    }
                     Menu {
                         Button("Bedenleri düzenle", systemImage: "ruler", action: onEdit)
                         TierMenuItems(itemIds: items.map(\.id))
@@ -258,7 +194,12 @@ struct WatchlistGroup: View {
                             .padding(14)
                     }
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        SelectableLink(item: item, selection: selection, inset: 10) { CompactItemRow(item: item) }
+                        NavigationLink(value: item) { CompactItemRow(item: item) }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                if let url = item.productURL { Link("Mağazada aç", destination: url) }
+                                TierMenuItems(itemIds: [item.id])
+                            }
                         if index < items.count - 1 { Divider().padding(.leading, 60) }
                     }
                 }

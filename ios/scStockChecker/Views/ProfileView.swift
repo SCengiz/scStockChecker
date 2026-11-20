@@ -64,7 +64,7 @@ struct ProfileView: View {
                 } header: {
                     Text("Kontrol sıklığı")
                 } footer: {
-                    Text("Her ürün bir gruba bağlıdır (varsayılan Normal); ürün detayından veya Takip ekranında \"Seç\" ile toplu değiştirebilirsiniz. \"Otomatik öncelik\" açık ürünler; istenen beden yakında olduğunda, son 1 saatte tükendiğinde ya da genelde geldiği saatte Öncelikli hızda kontrol edilir. Silinen gruptaki ürünler Normal'e döner.")
+                    Text("Her ürün bir gruba bağlıdır (varsayılan Normal); ürün detayından, ürüne basılı tutarak veya liste menüsünden (⋯) tüm liste için değiştirebilirsiniz. \"Otomatik öncelik\" açık ürünler; istenen beden yakında olduğunda, son 1 saatte tükendiğinde ya da genelde geldiği saatte Öncelikli hızda kontrol edilir. Silinen gruptaki ürünler Normal'e döner.")
                 }
 
                 Section {
