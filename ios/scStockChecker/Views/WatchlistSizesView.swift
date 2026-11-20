@@ -16,7 +16,7 @@ struct WatchlistSizesView: View {
                 } header: {
                     Text("Takip edilecek bedenler")
                 } footer: {
-                    Text("Virgülle ayırın. Boş bırakırsanız herhangi bir beden.")
+                    Text("Virgülle ayırın. Boş bırakırsanız herhangi bir beden. Kaydedince listedeki tüm ürünlere uygulanır; tek bir ürünün bedenini ürüne dokunarak ayrıca değiştirebilirsiniz.")
                 }
                 Section {
                     Text(list.url).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)

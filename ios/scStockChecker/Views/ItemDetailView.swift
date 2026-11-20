@@ -35,7 +35,8 @@ struct ItemDetailView: View {
                             Task { await toggle(size.name, in: item) }
                         } label: {
                             HStack {
-                                Image(systemName: item.wantedSizes.contains(size.name) ? "checkmark.circle.fill" : "circle")
+                                let selected = !item.wantedSizes.isEmpty && item.isWanted(size.name)
+                                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
                                     .foregroundStyle(Color.accentColor)
                                 Text(size.name).foregroundStyle(.primary)
                                 Spacer()
@@ -43,18 +44,13 @@ struct ItemDetailView: View {
                                     .foregroundStyle(size.availability.isAvailable ? .green : .secondary)
                             }
                         }
-                        .disabled(item.watchlistId != nil)
                     }
                 } header: {
                     Text("Bedenler")
                 } footer: {
-                    if item.watchlistId != nil {
-                        Text("Bu ürün bir listeden geliyor; bedenleri Listeler sekmesinden değiştirin.")
-                    } else {
-                        Text(item.wantedSizes.isEmpty
-                             ? "Hiç beden seçilmedi: herhangi bir beden gelince bildirim gelir."
-                             : "Seçili bedenlerden biri stoğa girince bildirim gelir.")
-                    }
+                    Text(item.wantedSizes.isEmpty
+                         ? "Hiç beden seçilmedi: herhangi bir beden gelince bildirim gelir."
+                         : "Seçili bedenlerden biri stoğa girince bildirim gelir.")
                 }
 
                 Section {
@@ -90,8 +86,16 @@ struct ItemDetailView: View {
     }
 
     private func toggle(_ size: String, in item: TrackedItem) async {
+        // Match the way sizes are compared ("M" selects "M (US M)"), and keep the product's size order.
+        let key = TrackedItem.sizeKey(size)
         var sizes = item.wantedSizes
-        if let index = sizes.firstIndex(of: size) { sizes.remove(at: index) } else { sizes.append(size) }
+        if sizes.contains(where: { TrackedItem.sizeKey($0) == key }) {
+            sizes.removeAll { TrackedItem.sizeKey($0) == key }
+        } else {
+            sizes.append(size)
+        }
+        let order = item.sizes.map(\.name)
+        sizes.sort { (order.firstIndex(of: $0) ?? .max) < (order.firstIndex(of: $1) ?? .max) }
         try? await store.updateWantedSizes(item: item, sizes: sizes)
     }
 }
